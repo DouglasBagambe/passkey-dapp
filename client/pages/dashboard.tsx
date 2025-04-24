@@ -3,13 +3,13 @@
 // client/pages/dashboard.tsx
 "use client";
 
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Buffer } from "buffer";
 import WalletControls from "../components/WalletControls";
 import PortfolioTable from "../components/PortfolioTable";
 import SwapModal from "../components/SwapModal";
-import WalletProvider from "../components/WalletProvider";
+import WalletProvider, { useWallet } from "../components/WalletProvider";
 
 // Client-side polyfills
 if (typeof window !== "undefined") {
@@ -24,14 +24,18 @@ const connection = new Connection(
 // Disable SSR for this page
 export const dynamic = "force-dynamic";
 
-// Define the type for the render prop function
-type WalletRenderProps = {
-  isConnected: boolean;
-  publicKey: PublicKey | null;
-  disconnect: () => void;
-};
-
+// Main Dashboard wrapper component
 export default function Dashboard() {
+  return (
+    <WalletProvider connection={connection}>
+      <DashboardContent />
+    </WalletProvider>
+  );
+}
+
+// DashboardContent component that uses the wallet context
+function DashboardContent() {
+  const { isConnected, publicKey, disconnect } = useWallet();
   const [isClient, setIsClient] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -64,24 +68,20 @@ export default function Dashboard() {
     setIsClient(true);
   }, []);
 
-  // Handle wallet functions
-  const handleWalletConnect = (
-    isConnected: boolean,
-    publicKey: PublicKey | null
-  ) => {
+  // Handle wallet connection effect
+  useEffect(() => {
     if (isConnected && publicKey) {
       console.log(
         "Dashboard initialized, wallet connected:",
         publicKey.toString()
       );
-
       // Fetch mock portfolio data
       fetchMockPortfolioData();
     } else if (!isConnected && !isLoading) {
       // If not connected and not in initial loading state, redirect to home
       window.location.href = "/";
     }
-  };
+  }, [isConnected, publicKey, isLoading]);
 
   const fetchMockPortfolioData = () => {
     // Simulate API call delay
@@ -191,111 +191,92 @@ export default function Dashboard() {
     );
   }
 
-  // Create a properly typed render function
-  const renderWalletContent = (props: WalletRenderProps): ReactNode => {
-    const { isConnected, publicKey, disconnect } = props;
-
-    // Call handler after component mount
-    useEffect(() => {
-      handleWalletConnect(isConnected, publicKey);
-    }, [isConnected, publicKey]);
-
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white shadow">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-900">
-                Passkey DeFi dApp
-              </h1>
-              <WalletControls publicKey={publicKey} disconnect={disconnect} />
-            </div>
-          </div>
-        </header>
-
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Portfolio Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <p className="text-sm text-gray-500 mb-1">Total Balance</p>
-              <h2 className="text-3xl font-bold">
-                ${walletStats.totalValue.toFixed(2)}
-              </h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <p className="text-sm text-gray-500 mb-1">24h Change</p>
-              <h2
-                className={`text-3xl font-bold ${
-                  walletStats.dailyChange >= 0
-                    ? "text-green-600"
-                    : "text-red-600"
-                }`}
-              >
-                {walletStats.dailyChange >= 0 ? "+" : ""}$
-                {walletStats.dailyChange.toFixed(2)}
-              </h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <p className="text-sm text-gray-500 mb-1">Percentage Change</p>
-              <h2
-                className={`text-3xl font-bold ${
-                  walletStats.changePct >= 0 ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                {walletStats.changePct >= 0 ? "+" : ""}
-                {walletStats.changePct.toFixed(2)}%
-              </h2>
-            </div>
-          </div>
-
-          {/* Tabs (for future expansion) */}
-          <div className="border-b border-gray-200 mb-6">
-            <nav className="-mb-px flex space-x-8">
-              <button className="border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                Portfolio
-              </button>
-              <button className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                Swap
-              </button>
-              <button className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                Activity
-              </button>
-            </nav>
-          </div>
-
-          {/* Main content */}
-          <PortfolioTable portfolio={portfolio} onSwap={handleSwap} />
-
-          {/* Swap Modal */}
-          {isSwapOpen && (
-            <SwapModal
-              token={selectedToken}
-              publicKey={publicKey}
-              onClose={() => setIsSwapOpen(false)}
-            />
-          )}
-        </main>
-
-        {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 py-4">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p className="text-center text-sm text-gray-500">
-              Powered by LazorKit — Secure, non-custodial wallet with passkey
-              authentication
-            </p>
-          </div>
-        </footer>
-      </div>
-    );
-  };
-
+  // Main dashboard UI
   return (
-    <WalletProvider connection={connection}>
-      {(isConnected, publicKey, disconnect) =>
-        renderWalletContent({ isConnected, publicKey, disconnect })
-      }
-    </WalletProvider>
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Passkey DeFi dApp
+            </h1>
+            <WalletControls publicKey={publicKey} disconnect={disconnect} />
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Portfolio Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <p className="text-sm text-gray-500 mb-1">Total Balance</p>
+            <h2 className="text-3xl font-bold">
+              ${walletStats.totalValue.toFixed(2)}
+            </h2>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <p className="text-sm text-gray-500 mb-1">24h Change</p>
+            <h2
+              className={`text-3xl font-bold ${
+                walletStats.dailyChange >= 0 ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {walletStats.dailyChange >= 0 ? "+" : ""}$
+              {walletStats.dailyChange.toFixed(2)}
+            </h2>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <p className="text-sm text-gray-500 mb-1">Percentage Change</p>
+            <h2
+              className={`text-3xl font-bold ${
+                walletStats.changePct >= 0 ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {walletStats.changePct >= 0 ? "+" : ""}
+              {walletStats.changePct.toFixed(2)}%
+            </h2>
+          </div>
+        </div>
+
+        {/* Tabs (for future expansion) */}
+        <div className="border-b border-gray-200 mb-6">
+          <nav className="-mb-px flex space-x-8">
+            <button className="border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+              Portfolio
+            </button>
+            <button className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+              Swap
+            </button>
+            <button className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+              Activity
+            </button>
+          </nav>
+        </div>
+
+        {/* Main content */}
+        <PortfolioTable portfolio={portfolio} onSwap={handleSwap} />
+
+        {/* Swap Modal */}
+        {isSwapOpen && (
+          <SwapModal
+            token={selectedToken}
+            publicKey={publicKey}
+            onClose={() => setIsSwapOpen(false)}
+          />
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-center text-sm text-gray-500">
+            Powered by LazorKit — Secure, non-custodial wallet with passkey
+            authentication
+          </p>
+        </div>
+      </footer>
+    </div>
   );
 }
