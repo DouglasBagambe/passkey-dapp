@@ -1,21 +1,11 @@
 // src/app/components/PortfolioTable.tsx
 import React from "react";
 import { ArrowUpRight, ArrowDownRight, RefreshCw } from "lucide-react";
-
-interface Token {
-  mint: string;
-  symbol: string;
-  name: string;
-  icon?: string;
-  balance: string;
-  usdValue: number;
-  price: number;
-  change24h: number;
-}
+import { Token } from "../types";
 
 interface PortfolioTableProps {
   portfolio: Token[];
-  onSwap: (token: { mint: string; symbol: string; balance: string }) => void;
+  onSwap: (token: Token) => void;
 }
 
 export default function PortfolioTable({
@@ -129,6 +119,10 @@ export default function PortfolioTable({
                           mint: token.mint,
                           symbol: token.symbol,
                           balance: token.balance,
+                          name: "",
+                          usdValue: 0,
+                          price: 0,
+                          change24h: 0,
                         })
                       }
                       className="bg-indigo-600/20 hover:bg-indigo-600/40 p-2 rounded-lg transition-colors"
