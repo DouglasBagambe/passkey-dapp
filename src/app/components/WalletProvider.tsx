@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// app/components/WalletProvider.tsx
+// src/app/components/WalletProvider.tsx
 "use client";
 
 import React, {
@@ -10,6 +11,7 @@ import React, {
   ReactNode,
 } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
+import { PasskeyDappClient } from "../lib/anchorClient";
 
 // Define types for our wallet context
 type WalletContextType = {
@@ -18,6 +20,7 @@ type WalletContextType = {
   connect: () => Promise<void>;
   disconnect: () => void;
   connection: Connection;
+  programClient: PasskeyDappClient | null;
 };
 
 // Create context with default values
@@ -27,6 +30,7 @@ const WalletContext = createContext<WalletContextType>({
   connect: async () => {},
   disconnect: () => {},
   connection: new Connection("https://api.devnet.solana.com"),
+  programClient: null,
 });
 
 // Custom hook to use wallet context
@@ -39,7 +43,6 @@ type WalletProviderProps = {
 
 // Mock implementation of a browser credential store
 const mockCredentialStore = {
-  // In a real implementation, this would interact with the WebAuthn API
   create: async () => {
     console.log("Creating new credential");
     return { id: "mock-credential-id" };
@@ -61,6 +64,9 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
 }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [publicKey, setPublicKey] = useState<PublicKey | null>(null);
+  const [programClient, setProgramClient] = useState<PasskeyDappClient | null>(
+    null
+  );
 
   useEffect(() => {
     // Check if user was previously connected
@@ -68,9 +74,17 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
       try {
         const storedWallet = localStorage.getItem("walletConnected");
         if (storedWallet === "true") {
-          // In a real implementation, we would verify the credential
-          setPublicKey(generateDemoPublicKey());
+          const demoPublicKey = generateDemoPublicKey();
+          setPublicKey(demoPublicKey);
           setIsConnected(true);
+          // Initialize program client
+          const wallet = {
+            publicKey: demoPublicKey,
+            signTransaction: async (tx: any) => tx,
+            signAllTransactions: async (txs: any[]) => txs,
+          };
+          const client = new PasskeyDappClient(connection, wallet);
+          setProgramClient(client);
         }
       } catch (error) {
         console.error("Failed to restore connection:", error);
@@ -78,18 +92,23 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
     };
 
     checkConnection();
-  }, []);
+  }, [connection]);
 
   const connect = async () => {
     try {
-      // In a real implementation, this would use WebAuthn to create or get credentials
       await mockCredentialStore.get();
-
-      // For demo purposes, we'll use a fixed public key
       const demoPublicKey = generateDemoPublicKey();
       setPublicKey(demoPublicKey);
       setIsConnected(true);
       localStorage.setItem("walletConnected", "true");
+      // Initialize program client
+      const wallet = {
+        publicKey: demoPublicKey,
+        signTransaction: async (tx: any) => tx,
+        signAllTransactions: async (txs: any[]) => txs,
+      };
+      const client = new PasskeyDappClient(connection, wallet);
+      setProgramClient(client);
     } catch (error) {
       console.error("Connection failed:", error);
       throw error;
@@ -99,6 +118,7 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
   const disconnect = () => {
     setPublicKey(null);
     setIsConnected(false);
+    setProgramClient(null);
     localStorage.removeItem("walletConnected");
   };
 
@@ -108,6 +128,7 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
     connect,
     disconnect,
     connection,
+    programClient,
   };
 
   return (
@@ -119,7 +140,6 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
 
 export default WalletProvider;
 
-// LazorConnect component to be used in the app
 export const LazorConnect = ({
   children,
   onConnect,

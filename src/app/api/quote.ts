@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// client/pages/api/quote.ts
+// src/app/api/quote.ts
 
 import type { NextApiRequest, NextApiResponse } from "next";
 

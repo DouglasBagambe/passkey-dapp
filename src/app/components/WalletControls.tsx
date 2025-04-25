@@ -1,4 +1,4 @@
-// app/components/WalletControls.tsx
+// src/app/components/WalletControls.tsx
 import React, { useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { Copy, LogOut, Settings, ChevronDown } from "lucide-react";

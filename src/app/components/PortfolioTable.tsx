@@ -1,4 +1,4 @@
-// app/components/PortfolioTable.tsx
+// src/app/components/PortfolioTable.tsx
 import React from "react";
 import { ArrowUpRight, ArrowDownRight, RefreshCw } from "lucide-react";
 
@@ -22,44 +22,7 @@ export default function PortfolioTable({
   portfolio,
   onSwap,
 }: PortfolioTableProps) {
-  // Mock data for demo if portfolio is empty
-  const mockData: Token[] =
-    portfolio.length > 0
-      ? portfolio
-      : [
-          {
-            mint: "So11111111111111111111111111111111111111112",
-            symbol: "SOL",
-            name: "Solana",
-            icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
-            balance: "1.5",
-            usdValue: 150.75,
-            price: 100.5,
-            change24h: 2.3,
-          },
-          {
-            mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-            symbol: "USDC",
-            name: "USD Coin",
-            icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
-            balance: "200.45",
-            usdValue: 200.45,
-            price: 1.0,
-            change24h: 0.01,
-          },
-          {
-            mint: "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs",
-            symbol: "ETH",
-            name: "Ethereum (Wormhole)",
-            icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs/logo.png",
-            balance: "0.1",
-            usdValue: 350.25,
-            price: 3502.5,
-            change24h: -1.2,
-          },
-        ];
-
-  const totalUsdValue = mockData.reduce(
+  const totalUsdValue = portfolio.reduce(
     (sum, token) => sum + token.usdValue,
     0
   );
@@ -72,7 +35,6 @@ export default function PortfolioTable({
       BONK: "from-yellow-500 to-orange-500",
       JTO: "from-green-500 to-emerald-600",
     };
-
     return colors[symbol] || "from-indigo-600 to-purple-600";
   };
 
@@ -90,7 +52,6 @@ export default function PortfolioTable({
           </button>
         </div>
       </div>
-
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -104,7 +65,7 @@ export default function PortfolioTable({
             </tr>
           </thead>
           <tbody>
-            {mockData.map((token) => (
+            {portfolio.map((token) => (
               <tr
                 key={token.mint}
                 className="border-b border-gray-800/50 hover:bg-gray-800/20 transition-colors"
@@ -187,7 +148,6 @@ export default function PortfolioTable({
           </tbody>
         </table>
       </div>
-
       <div className="mt-6 pt-6 border-t border-gray-800">
         <div className="flex justify-between items-center">
           <span className="text-gray-400">Total Portfolio Value</span>

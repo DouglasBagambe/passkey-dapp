@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// app/components/SwapModal.tsx
+// src/app/components/SwapModal.tsx
 import React, { useState, useEffect } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { RefreshCw, ChevronDown, Zap, Loader2 } from "lucide-react";

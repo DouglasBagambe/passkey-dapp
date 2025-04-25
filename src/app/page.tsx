@@ -1,425 +1,479 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // app/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { Buffer } from "buffer";
-import dynamic from "next/dynamic";
-import { Connection } from "@solana/web3.js";
-import { useWallet } from "./components/WalletProvider";
-import { Loader2, Key, RefreshCcw, ShieldCheck, Wallet } from "lucide-react";
+import WalletProvider, { useWallet } from "./components/WalletProvider";
+import PortfolioTable from "./components/PortfolioTable";
+import SwapModal from "./components/SwapModal";
+import {
+  ArrowUpRight,
+  ArrowDownRight,
+  RefreshCw,
+  ChevronDown,
+  LogOut,
+  Copy,
+  BarChart3,
+  Wallet,
+  Activity,
+  Settings,
+  Key,
+  CheckCircle,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
 
-// Client-side polyfills
 if (typeof window !== "undefined") {
   window.Buffer = Buffer;
 }
 
-// Connection is initialized only on the client
 const connection = new Connection(
   process.env.NEXT_PUBLIC_SOLANA_RPC || "https://api.devnet.solana.com"
 );
 
-// Import WalletProvider dynamically to prevent SSR issues
-const DynamicWalletProvider = dynamic(
-  () => import("./components/WalletProvider"),
-  { ssr: false }
-);
+export const dynamic = "force-dynamic";
 
-// Disable SSR for this page
-export const dynamicConfig = "force-dynamic";
-
-export default function Home() {
-  const router = useRouter();
-  const [isClient, setIsClient] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [connectStage, setConnectStage] = useState(0); // 0: not started, 1: authenticating, 2: connecting, 3: success
-  const [error, setError] = useState<string | null>(null);
-
-  // Ensure we're on the client
-  useEffect(() => {
-    setIsClient(true);
-    setIsLoading(false);
-  }, []);
-
-  // Handle successful wallet connection
-  const handleWalletConnected = () => {
-    // Show success animation before redirecting
-    setConnectStage(3);
-
-    // Add delay before redirect for better UX
-    setTimeout(() => {
-      try {
-        router.push("/dashboard");
-      } catch (err) {
-        console.error("Navigation error:", err);
-        setError(
-          `Navigation failed: ${
-            err instanceof Error ? err.message : "Unknown error"
-          }`
-        );
-      }
-    }, 2000);
-  };
-
-  // Loading state
-  if (!isClient || isLoading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-pulse flex flex-col items-center">
-          <Loader2 className="h-16 w-16 text-indigo-500 animate-spin mb-4" />
-          <div className="h-4 bg-indigo-900 rounded w-32"></div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="bg-gray-900 border border-red-500 p-8 rounded-2xl max-w-md w-full">
-          <h1 className="text-3xl font-bold mb-4 text-indigo-400">
-            Connection Error
-          </h1>
-          <div className="bg-red-900/30 border border-red-700 p-4 rounded-lg mb-6">
-            <p className="text-red-300">{error}</p>
-          </div>
-          <button
-            onClick={() => setError(null)}
-            className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-all duration-300 shadow-lg shadow-indigo-700/50"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
+export default function Dashboard() {
   return (
-    <DynamicWalletProvider connection={connection}>
-      <div className="min-h-screen bg-gradient-to-b from-black to-indigo-950 text-white">
-        {/* Hero Section */}
-        <div className="relative overflow-hidden">
-          {/* Background Effect */}
-          <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
-
-          {/* Animated Gradient Orb */}
-          <div className="absolute top-20 right-20 w-96 h-96 bg-indigo-600 rounded-full filter blur-3xl opacity-20 animate-pulse"></div>
-          <div className="absolute bottom-20 left-40 w-64 h-64 bg-purple-600 rounded-full filter blur-3xl opacity-10 animate-pulse"></div>
-
-          <div className="container mx-auto px-6 py-16 relative z-10">
-            <nav className="flex justify-between items-center mb-16">
-              <div className="flex items-center space-x-2">
-                <div className="bg-indigo-600 rounded-lg p-2">
-                  <Key className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-xl font-bold text-white">
-                  LAZOR<span className="text-indigo-400">VAULT</span>
-                </span>
-              </div>
-
-              <div className="hidden md:flex space-x-8 text-gray-300 text-sm">
-                <a href="#" className="hover:text-indigo-400 transition-colors">
-                  Features
-                </a>
-                <a href="#" className="hover:text-indigo-400 transition-colors">
-                  Security
-                </a>
-                <a href="#" className="hover:text-indigo-400 transition-colors">
-                  Docs
-                </a>
-                <a href="#" className="hover:text-indigo-400 transition-colors">
-                  About
-                </a>
-              </div>
-            </nav>
-
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
-              <div className="lg:w-1/2">
-                <h1 className="text-5xl md:text-6xl font-extrabold mb-6">
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
-                    Next-Gen DeFi
-                  </span>
-                  <br />
-                  <span className="text-white">Powered by Passkeys</span>
-                </h1>
-
-                <p className="text-gray-300 text-lg mb-8 max-w-lg">
-                  Access your Solana assets with unparalleled security. No seed
-                  phrases, no compromises – just seamless blockchain interaction
-                  secured by biometric authentication.
-                </p>
-
-                <WalletConnectButton
-                  onConnect={handleWalletConnected}
-                  connectStage={connectStage}
-                  setConnectStage={setConnectStage}
-                />
-
-                <div className="flex items-center mt-8 text-sm text-gray-400">
-                  <ShieldCheck className="h-5 w-5 mr-2 text-indigo-400" />
-                  <span>Your keys, your crypto. Always non-custodial.</span>
-                </div>
-              </div>
-
-              <div className="lg:w-1/2 relative">
-                <div className="bg-gradient-to-br from-indigo-900/50 to-purple-900/50 backdrop-blur-lg border border-indigo-800/50 rounded-2xl p-6 shadow-2xl">
-                  <div className="absolute -top-4 -right-4 bg-indigo-600 rounded-lg p-2 shadow-lg">
-                    <ShieldCheck className="h-6 w-6 text-white" />
-                  </div>
-
-                  <div className="flex items-center mb-6">
-                    <div className="h-3 w-3 rounded-full bg-red-500 mr-2"></div>
-                    <div className="h-3 w-3 rounded-full bg-yellow-500 mr-2"></div>
-                    <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                  </div>
-
-                  <div className="mb-6">
-                    <div className="flex justify-between mb-2">
-                      <div className="text-sm text-gray-400">My Portfolio</div>
-                      <div className="text-sm text-indigo-400">$1,432.89</div>
-                    </div>
-                    <div className="bg-indigo-900/50 h-1 rounded-full">
-                      <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-1 rounded-full w-3/4"></div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {[
-                      {
-                        icon: "SOL",
-                        name: "Solana",
-                        amount: "1.5 SOL",
-                        value: "$150.75",
-                        change: "+2.3%",
-                      },
-                      {
-                        icon: "USDC",
-                        name: "USD Coin",
-                        amount: "200.45 USDC",
-                        value: "$200.45",
-                        change: "+0.01%",
-                      },
-                      {
-                        icon: "ETH",
-                        name: "Ethereum",
-                        amount: "0.1 ETH",
-                        value: "$350.25",
-                        change: "-1.2%",
-                      },
-                    ].map((token, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-black/20 rounded-lg"
-                      >
-                        <div className="flex items-center">
-                          <div className="bg-gradient-to-br from-indigo-600 to-purple-600 h-8 w-8 rounded-lg flex items-center justify-center mr-3">
-                            <span className="text-xs font-bold">
-                              {token.icon}
-                            </span>
-                          </div>
-                          <div>
-                            <div className="font-medium">{token.name}</div>
-                            <div className="text-sm text-gray-400">
-                              {token.amount}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div>{token.value}</div>
-                          <div
-                            className={`text-sm ${
-                              token.change.startsWith("+")
-                                ? "text-green-400"
-                                : "text-red-400"
-                            }`}
-                          >
-                            {token.change}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-6 grid grid-cols-2 gap-3">
-                    <button className="flex items-center justify-center py-2 bg-indigo-800/50 hover:bg-indigo-700/50 rounded-lg text-sm transition-colors">
-                      <RefreshCcw className="h-4 w-4 mr-2" />
-                      Swap
-                    </button>
-                    <button className="flex items-center justify-center py-2 bg-indigo-800/50 hover:bg-indigo-700/50 rounded-lg text-sm transition-colors">
-                      <Wallet className="h-4 w-4 mr-2" />
-                      Send
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Features Section */}
-        <div className="container mx-auto px-6 py-24">
-          <h2 className="text-center text-3xl font-bold mb-16">
-            Cutting-Edge Features
-          </h2>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              {
-                icon: <Wallet className="h-8 w-8" />,
-                title: "Non-Custodial",
-                description:
-                  "Full control of your assets with no intermediaries",
-              },
-              {
-                icon: <ShieldCheck className="h-8 w-8" />,
-                title: "Passkey Security",
-                description: "Biometric authentication with no seed phrases",
-              },
-              {
-                icon: <RefreshCcw className="h-8 w-8" />,
-                title: "Instant Swaps",
-                description: "Trade tokens with lightning-fast execution",
-              },
-              {
-                icon: <Key className="h-8 w-8" />,
-                title: "Cross-Chain",
-                description: "Access DeFi across multiple blockchain networks",
-              },
-            ].map((feature, index) => (
-              <div
-                key={index}
-                className="bg-indigo-900/20 backdrop-blur-sm border border-indigo-800/30 rounded-xl p-6 hover:bg-indigo-800/20 transition-colors"
-              >
-                <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-3 rounded-lg inline-block mb-4">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                <p className="text-gray-400">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <footer className="border-t border-indigo-900/50 py-8">
-          <div className="container mx-auto px-6">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="flex items-center space-x-2 mb-4 md:mb-0">
-                <div className="bg-indigo-800 rounded-lg p-1">
-                  <Key className="h-4 w-4 text-white" />
-                </div>
-                <span className="text-sm font-bold">
-                  LAZOR<span className="text-indigo-400">VAULT</span>
-                </span>
-              </div>
-
-              <div className="text-sm text-gray-500">
-                Powered by LazorKit — Advanced Web3 Authentication
-              </div>
-            </div>
-          </div>
-        </footer>
-      </div>
-    </DynamicWalletProvider>
+    <WalletProvider connection={connection}>
+      <DashboardContent />
+    </WalletProvider>
   );
 }
 
-// Client-side only component with a multi-stage authentication process
-function WalletConnectButton({
-  onConnect,
-  connectStage,
-  setConnectStage,
-}: {
-  onConnect: () => void;
-  connectStage: number;
-  setConnectStage: (stage: number) => void;
-}) {
-  const [animationComplete, setAnimationComplete] = useState(false);
-  const { isConnected, publicKey, connect } = useWallet();
+function DashboardContent() {
+  const { isConnected, publicKey, disconnect, programClient } = useWallet();
+  const [isClient, setIsClient] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("portfolio");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // Redirect if already connected
+  interface Token {
+    mint: string;
+    symbol: string;
+    name: string;
+    icon: string;
+    balance: string;
+    usdValue: number;
+    price: number;
+    change24h: number;
+  }
+
+  interface PortfolioStats {
+    totalValue: number;
+    dailyChange: number;
+    changePct: number;
+  }
+
+  const [portfolio, setPortfolio] = useState<Token[]>([]);
+  const [walletStats, setWalletStats] = useState<PortfolioStats>({
+    totalValue: 0,
+    dailyChange: 0,
+    changePct: 0,
+  });
+  const [isSwapOpen, setIsSwapOpen] = useState(false);
+  const [selectedToken, setSelectedToken] = useState<{
+    mint: string;
+    symbol: string;
+    balance: string;
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    if (isConnected && publicKey && connectStage === 3) {
-      onConnect();
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isConnected && publicKey && programClient) {
+      fetchPortfolioData();
+    } else if (!isConnected && !isLoading) {
+      window.location.href = "/";
     }
-  }, [isConnected, publicKey, onConnect, connectStage]);
+  }, [isConnected, publicKey, programClient, isLoading]);
 
-  // Connect wallet handler with staged approach
-  const handleConnect = async () => {
+  const fetchPortfolioData = async () => {
+    if (!publicKey || !programClient) return;
+
+    setIsLoading(true);
     try {
-      // Stage 1: Authenticating
-      setConnectStage(1);
+      let portfolioData = await programClient.fetchPortfolio(publicKey);
+      if (!portfolioData) {
+        // Initialize portfolio if it doesn't exist
+        await programClient.initializePortfolio(publicKey);
+        portfolioData = await programClient.fetchPortfolio(publicKey);
+      }
 
-      // Add a deliberate delay for better UX
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      if (!portfolioData) {
+        throw new Error("Failed to initialize or fetch portfolio");
+      }
 
-      // Stage 2: Connecting
-      setConnectStage(2);
+      // Fetch token accounts for additional data
+      const response = await fetch(
+        `/api/portfolio?publicKey=${publicKey.toString()}`
+      );
+      const data = await response.json();
 
-      // Connect to wallet
-      await connect();
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
-      // Stage 3: Success
-      setConnectStage(3);
+      // Since the program doesn't store token data, we'll use the API response
+      // For now, we'll use mock token data as a placeholder until the program is extended
+      const mockTokens: Token[] = [
+        {
+          mint: "So11111111111111111111111111111111111111112",
+          symbol: "SOL",
+          name: "Solana",
+          icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+          balance: "1.5",
+          usdValue: 150.75,
+          price: 100.5,
+          change24h: 2.3,
+        },
+        {
+          mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          symbol: "USDC",
+          name: "USD Coin",
+          icon: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+          balance: "200.45",
+          usdValue: 200.45,
+          price: 1.0,
+          change24h: 0.01,
+        },
+      ];
 
-      // Animation before redirect
-      setTimeout(() => {
-        setAnimationComplete(true);
-        onConnect();
-      }, 1000);
+      setPortfolio(mockTokens);
+
+      // Update wallet stats based on portfolio data
+      const totalValue =
+        parseFloat(portfolioData.totalValue) ||
+        mockTokens.reduce((sum, token) => sum + token.usdValue, 0);
+      const previousDayValue = totalValue * 0.99; // Mock previous day value
+      const dailyChange = totalValue - previousDayValue;
+      const changePct = (dailyChange / previousDayValue) * 100;
+
+      setWalletStats({
+        totalValue,
+        dailyChange,
+        changePct,
+      });
     } catch (err) {
-      console.error("Connection failed:", err);
-      setConnectStage(0);
+      console.error("Error fetching portfolio:", err);
+      setError(err instanceof Error ? err.message : "Failed to load portfolio");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Staged button states
-  const buttonContent = () => {
-    switch (connectStage) {
-      case 1:
-        return (
-          <>
-            <Loader2 className="animate-spin mr-3 h-5 w-5" />
-            Authenticating with Passkey...
-          </>
-        );
-      case 2:
-        return (
-          <>
-            <Loader2 className="animate-spin mr-3 h-5 w-5" />
-            Connecting to Wallet...
-          </>
-        );
-      case 3:
-        return (
-          <>
-            <ShieldCheck className="mr-3 h-5 w-5" />
-            Connection Successful!
-          </>
-        );
-      default:
-        return (
-          <>
-            <Key className="mr-3 h-5 w-5" />
-            Connect with Passkey
-          </>
-        );
-    }
+  const handleSwap = (token: {
+    mint: string;
+    symbol: string;
+    balance: string;
+  }) => {
+    setSelectedToken(token);
+    setIsSwapOpen(true);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  if (!isClient || isLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="relative">
+            <div className="h-16 w-16 rounded-full border-4 border-indigo-800 border-t-indigo-500 animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Key className="h-6 w-6 text-indigo-500" />
+            </div>
+          </div>
+          <p className="text-indigo-500 animate-pulse">Loading Portfolio...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="bg-gray-900 border border-red-500 p-8 rounded-2xl max-w-lg w-full">
+          <div className="flex justify-center mb-6">
+            <div className="bg-red-900/30 h-16 w-16 rounded-full flex items-center justify-center">
+              <AlertTriangle className="h-8 w-8 text-red-500" />
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold mb-4 text-center text-white">
+            Dashboard Error
+          </h1>
+          <div className="bg-red-900/30 border border-red-800 p-4 rounded-lg mb-6">
+            <p className="text-red-300 text-center">{error}</p>
+          </div>
+          <div className="flex space-x-4">
+            <button
+              onClick={() => window.location.reload()}
+              className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-all duration-300 shadow-lg shadow-indigo-700/50"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => (window.location.href = "/")}
+              className="flex-1 px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-all duration-300"
+            >
+              Back to Home
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const getTokenBgColor = (symbol: string) => {
+    const colors: { [key: string]: string } = {
+      SOL: "from-blue-600 to-purple-600",
+      USDC: "from-blue-500 to-blue-600",
+      ETH: "from-purple-600 to-indigo-600",
+      BONK: "from-yellow-500 to-orange-500",
+      JTO: "from-green-500 to-emerald-600",
+    };
+    return colors[symbol] || "from-indigo-600 to-purple-600";
   };
 
   return (
-    <button
-      onClick={connectStage === 0 ? handleConnect : undefined}
-      disabled={connectStage !== 0}
-      className={`flex items-center justify-center px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 shadow-lg ${
-        connectStage === 3
-          ? "bg-green-600 shadow-green-700/50"
-          : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-indigo-700/50"
-      } ${connectStage !== 0 ? "cursor-default" : "cursor-pointer"}`}
-    >
-      {buttonContent()}
-    </button>
+    <div className="min-h-screen bg-black text-white flex">
+      <div
+        className={`bg-gray-900 h-screen ${
+          isSidebarOpen ? "w-64" : "w-20"
+        } transition-all duration-300 flex flex-col border-r border-gray-800`}
+      >
+        <div className="p-4 flex items-center justify-between border-b border-gray-800 h-16">
+          <div className="flex items-center space-x-2">
+            <div className="bg-indigo-600 rounded-lg p-2">
+              <Key className="h-5 w-5 text-white" />
+            </div>
+            {isSidebarOpen && <span className="font-bold">LAZORVAULT</span>}
+          </div>
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <ChevronDown
+              className={`h-5 w-5 transform ${
+                isSidebarOpen ? "" : "rotate-180"
+              }`}
+            />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto py-4">
+          <nav className="space-y-1 px-2">
+            {[
+              {
+                name: "Portfolio",
+                icon: <BarChart3 className="h-5 w-5" />,
+                id: "portfolio",
+              },
+              {
+                name: "Swap",
+                icon: <RefreshCw className="h-5 w-5" />,
+                id: "swap",
+              },
+              {
+                name: "Send",
+                icon: <ArrowUpRight className="h-5 w-5" />,
+                id: "send",
+              },
+              {
+                name: "Receive",
+                icon: <ArrowDownRight className="h-5 w-5" />,
+                id: "receive",
+              },
+              {
+                name: "Activity",
+                icon: <Activity className="h-5 w-5" />,
+                id: "activity",
+              },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`flex items-center ${
+                  isSidebarOpen ? "justify-start px-4" : "justify-center"
+                } 
+                py-3 rounded-lg transition-colors w-full ${
+                  activeTab === item.id
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                }`}
+              >
+                <span className="flex-shrink-0">{item.icon}</span>
+                {isSidebarOpen && <span className="ml-3">{item.name}</span>}
+              </button>
+            ))}
+          </nav>
+        </div>
+        <div className="p-4 border-t border-gray-800">
+          <button
+            onClick={() => disconnect()}
+            className={`flex items-center ${
+              isSidebarOpen ? "justify-start space-x-2 px-4" : "justify-center"
+            } 
+            py-3 rounded-lg text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors w-full`}
+          >
+            <LogOut className="h-5 w-5" />
+            {isSidebarOpen && <span>Disconnect</span>}
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <header className="bg-gray-900 h-16 flex items-center px-6 border-b border-gray-800">
+          <div className="flex-1">
+            <h1 className="text-xl font-semibold">Dashboard</h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="bg-gray-800 rounded-full py-1 px-4 flex items-center">
+              <div className="bg-green-500 h-2 w-2 rounded-full mr-2"></div>
+              <span className=" Fauxt-sm text-gray-300 mr-2 hidden md:inline">
+                Connected
+              </span>
+              <div
+                className="text-sm text-gray-300 cursor-pointer flex items-center group"
+                onClick={() =>
+                  copyToClipboard(publicKey ? publicKey.toString() : "")
+                }
+              >
+                {publicKey && (
+                  <span className="hidden md:inline">
+                    {publicKey.toString().slice(0, 4)}...
+                    {publicKey.toString().slice(-4)}
+                  </span>
+                )}
+                <Copy className="h-4 w-4 ml-1 opacity-50 group-hover:opacity-100" />
+              </div>
+            </div>
+            <button className="bg-gray-800 p-2 rounded-lg hover:bg-gray-700 transition-colors">
+              <Settings className="h-5 w-5" />
+            </button>
+          </div>
+        </header>
+        <main className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-900 to-black p-6">
+          <div className="lg:grid lg:grid-cols-4 gap-6 mb-8">
+            <div className="col-span-3 bg-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-800/60 shadow-xl mb-6 lg:mb-0">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold">Portfolio Overview</h2>
+                <button
+                  onClick={fetchPortfolioData}
+                  className="text-indigo-400 hover:text-indigo-300 transition-colors flex items-center"
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  <span className="text-sm">Refresh</span>
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/30">
+                  <div className="text-sm text-gray-400">Total Balance</div>
+                  <div className="text-2xl font-bold mt-1">
+                    ${walletStats.totalValue.toFixed(2)}
+                  </div>
+                </div>
+                <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/30">
+                  <div className="text-sm text-gray-400">24h Change</div>
+                  <div
+                    className={`text-2xl font-bold mt-1 flex items-center ${
+                      walletStats.dailyChange >= 0
+                        ? "text-green-500"
+                        : "text-red-500"
+                    }`}
+                  >
+                    {walletStats.dailyChange >= 0 ? (
+                      <ArrowUpRight className="h-5 w-5 mr-1" />
+                    ) : (
+                      <ArrowDownRight className="h-5 w-5 mr-1" />
+                    )}
+                    ${Math.abs(walletStats.dailyChange).toFixed(2)}
+                  </div>
+                </div>
+                <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/30">
+                  <div className="text-sm text-gray-400">Percentage Change</div>
+                  <div
+                    className={`text-2xl font-bold mt-1 flex items-center ${
+                      walletStats.changePct >= 0
+                        ? "text-green-500"
+                        : "text-red-500"
+                    }`}
+                  >
+                    {walletStats.changePct >= 0 ? (
+                      <ArrowUpRight className="h-5 w-5 mr-1" />
+                    ) : (
+                      <ArrowDownRight className="h-5 w-5 mr-1" />
+                    )}
+                    {Math.abs(walletStats.changePct).toFixed(2)}%
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-800/50 rounded-xl h-64 flex items-center justify-center border border-gray-700/30">
+                <div className="text-center text-gray-500">
+                  <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>Portfolio Chart</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-800/60 shadow-xl">
+              <h2 className="text-xl font-bold mb-6">Quick Actions</h2>
+              <div className="space-y-4">
+                <button
+                  onClick={() =>
+                    portfolio.length > 0 &&
+                    handleSwap({
+                      mint: portfolio[0].mint,
+                      symbol: portfolio[0].symbol,
+                      balance: portfolio[0].balance,
+                    })
+                  }
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl transition-colors flex items-center justify-center"
+                >
+                  <RefreshCw className="h-5 w-5 mr-2" />
+                  <span>Swap Tokens</span>
+                </button>
+                <button className="w-full bg-gray-800 hover:bg-gray-700 py-3 rounded-xl transition-colors flex items-center justify-center">
+                  <ArrowUpRight className="h-5 w-5 mr-2" />
+                  <span>Send</span>
+                </button>
+                <button className="w-full bg-gray-800 hover:bg-gray-700 py-3 rounded-xl transition-colors flex items-center justify-center">
+                  <ArrowDownRight className="h-5 w-5 mr-2" />
+                  <span>Receive</span>
+                </button>
+              </div>
+              <div className="mt-6 pt-6 border-t border-gray-800">
+                <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+                  <span>Network</span>
+                  <span className="flex items-center">
+                    <div className="h-2 w-2 bg-green-500 rounded-full mr-2"></div>
+                    Solana Devnet
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm text-gray-400">
+                  <span>Protection</span>
+                  <span className="flex items-center text-green-500">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Active
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <PortfolioTable portfolio={portfolio} onSwap={handleSwap} />
+        </main>
+      </div>
+      {isSwapOpen && selectedToken && (
+        <SwapModal
+          token={selectedToken}
+          publicKey={publicKey}
+          onClose={() => setIsSwapOpen(false)}
+        />
+      )}
+    </div>
   );
 }
