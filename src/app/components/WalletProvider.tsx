@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// components/WalletProvider.tsx
+// app/components/WalletProvider.tsx
 "use client";
 
 import React, {

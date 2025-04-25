@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #000000;
+  --foreground: #ffffff;
+  --primary: #4f46e5; /* indigo-600 */
+  --primary-light: #6366f1; /* indigo-500 */
+  --primary-dark: #4338ca; /* indigo-700 */
+  --secondary: #7e22ce; /* purple-700 */
+  --secondary-light: #a855f7; /* purple-500 */
+  --gray-dark: #111827; /* gray-900 */
+  --gray-medium: #1f2937; /* gray-800 */
+  --gray-light: #374151; /* gray-700 */
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+/* Grid pattern for the background effect */
+.bg-grid-pattern {
+  background-image: linear-gradient(
+      to right,
+      rgba(75, 85, 99, 0.1) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(75, 85, 99, 0.1) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+/* Add animations */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Custom animation classes */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom gradients */
+.bg-gradient-indigo-purple {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  background-size: 200% 200%;
+  animation: gradient 5s ease infinite;
+}
